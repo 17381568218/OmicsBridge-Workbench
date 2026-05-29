@@ -1,0 +1,6 @@
+flask
+openpyxl
+waitress
+pandas
+numpy
+matplotlib

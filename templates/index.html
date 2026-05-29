@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmicsBridge Workbench</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header><h1>OmicsBridge Workbench</h1></header>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('tab1')">1. CCS Pipeline</button>
+  <button class="tab" onclick="switchTab('tab6')">2. Metabolomics</button>
+  <button class="tab" onclick="switchTab('tab2')">3. HMDB Source</button>
+  <button class="tab" onclick="switchTab('tab3')">4. CCS Query</button>
+  <button class="tab" onclick="switchTab('tab4')">5. Origin Query</button>
+  <button class="tab" onclick="switchTab('tab5')">6. ChemClass Query</button>
+</div>
+
+<!-- ============ Tab 1: CCS Pipeline ============ -->
+<div id="tab1" class="tab-content active">
+  <div class="card">
+    <h3>POS Mode</h3>
+    <div class="file-row"><label>COM:</label><input type="file" id="pos_com" accept=".csv"><span class="fname" id="pos_com_name"></span></div>
+    <div class="file-row"><label>IDEN:</label><input type="file" id="pos_iden" accept=".csv"><span class="fname" id="pos_iden_name"></span></div>
+  </div>
+  <div class="card">
+    <h3>NEG Mode (optional)</h3>
+    <div class="file-row"><label>COM:</label><input type="file" id="neg_com" accept=".csv"><span class="fname" id="neg_com_name"></span></div>
+    <div class="file-row"><label>IDEN:</label><input type="file" id="neg_iden" accept=".csv"><span class="fname" id="neg_iden_name"></span></div>
+  </div>
+  <div class="card">
+    <h3>Filter Settings</h3>
+    <div class="filter-row">
+      <label>Score >= <input type="number" id="score_cut" value="36" step="1" class="narrow"></label>
+      <label>Frag >= <input type="number" id="frag_cut" value="1" step="0.1" class="narrow"></label>
+      <label>dCCS >= <input type="number" id="dccs_cut" value="" step="0.1" class="narrow"></label>
+    </div>
+    <div id="filter_checkboxes"></div>
+  </div>
+  <div class="btn-row">
+    <button id="btn_run" onclick="runPipeline()" class="btn-run">▶ Run</button>
+    <button id="btn_stop" onclick="stopPipeline()" class="btn-stop" disabled>■ Stop</button>
+  </div>
+  <div class="card">
+    <h3>Progress</h3>
+    <div class="progress-bar"><div id="progress_fill" class="progress-fill"></div></div>
+    <pre id="log_output" class="log-box"></pre>
+  </div>
+  <div class="card" id="downloads_section" style="display:none">
+    <h3>Downloads</h3>
+    <div id="download_links"></div>
+  </div>
+</div>
+
+<!-- ============ Tab 6: Metabolomics analysis ============ -->
+<div id="tab6" class="tab-content">
+  <div class="analysis-shell">
+    <section class="analysis-main">
+      <div class="panel">
+        <h3>Metabolomics Matrix</h3>
+        <div class="file-row wide-file"><label>CSV:</label><input type="file" id="met_matrix" accept=".csv"><span class="fname" id="met_matrix_name"></span></div>
+        <div class="filter-row compact">
+          <label>Group A <input type="text" id="met_group_a" placeholder="auto" class="narrow text"></label>
+          <label>Group B <input type="text" id="met_group_b" placeholder="auto" class="narrow text"></label>
+        </div>
+        <div class="btn-row">
+          <button id="btn_met_run" onclick="runMetabolomics()" class="btn-run">Run Analysis</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Overview</h3>
+        <div id="met_metrics" class="metric-grid empty-state">Upload a matrix to start.</div>
+        <div id="met_warnings" class="warning-list"></div>
+      </div>
+
+      <div class="panel two-col">
+        <div>
+          <h3>PCA</h3>
+          <div id="met_pca" class="chart-box"></div>
+        </div>
+        <div>
+          <h3>Volcano</h3>
+          <div id="met_volcano" class="chart-box"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Top Feature Heatmap</h3>
+        <div id="met_heatmap" class="heatmap-box"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Top Differential Features</h3>
+        <div class="table-wrap"><table id="met_top_table"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <aside class="analysis-side">
+      <div class="panel">
+        <h3>Progress</h3>
+        <pre id="met_log_output" class="log-box"></pre>
+      </div>
+      <div class="panel" id="met_downloads_section" style="display:none">
+        <h3>Downloads</h3>
+        <div id="met_download_links"></div>
+      </div>
+      <div class="panel">
+        <h3>Sample Design</h3>
+        <div class="table-wrap compact-table"><table id="met_sample_table"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ============ Tabs 2-5: Query pages ============ -->
+<script>
+const QUERY_TABS = [
+  {id:'tab2', title:'HMDB Source Query', endpoint:'/api/hmdb_query', cols:'HMDB_ID,Origin,Biospecimens,Tissues,Cellular',
+   placeholder:'HMDB0002639\nHMDB0010384\nHMDB0014838'},
+  {id:'tab3', title:'CCS Value Query', endpoint:'/api/ccs_query', cols:'HMDB_ID,Adduct,CCS,CCS_Type,Source,Name',
+   placeholder:'HMDB0002639, [M+H]+\nHMDB0010384, [M+Na]+'},
+  {id:'tab4', title:'Origin Query', endpoint:'/api/origin_query', cols:'HMDB_ID,Origin',
+   placeholder:'HMDB0002639\nHMDB0010384'},
+  {id:'tab5', title:'Chemical Class Query', endpoint:'/api/chemclass_query', cols:'HMDB_ID,Chemical_Class',
+   placeholder:'HMDB0002639\nHMDB0010384'},
+];
+</script>
+
+<script>QUERY_TABS.forEach(t => {
+document.write('<div id="'+t.id+'" class="tab-content">'+
+  '<div class="card"><h3>'+t.title+'</h3>'+
+  '<textarea id="ta_'+t.id+'" class="query-input" placeholder="'+t.placeholder+'"></textarea>'+
+  '<div class="file-row"><label>or import:</label><input type="file" id="file_'+t.id+'" accept=".csv,.xlsx,.xls" onchange="qImport(\''+t.id+'\')"></div>'+
+  '<button onclick="qRun(\''+t.id+'\',\''+t.endpoint+'\')" class="btn-run">▶ Query</button>'+
+  '<button onclick="qExport(\''+t.id+'\',\''+t.cols+'\')" class="btn-export">Export CSV</button>'+
+  '</div>'+
+  '<div class="card"><h3>Results</h3>'+
+  '<div class="table-wrap"><table id="tbl_'+t.id+'"><thead></thead><tbody></tbody></table></div>'+
+  '<div id="count_'+t.id+'" class="result-count"></div>'+
+  '</div></div>');
+})</script>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

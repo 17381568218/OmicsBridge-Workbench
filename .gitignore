@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime
+temp/
+*.log
+
+# Results / output data
+results_*/
+metabolomics_results_test/
+*.csv
+
+# Tunnel config (contains secrets)
+config.yml
+
+# Binary tools (downloaded separately)
+cloudflared.exe
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large data (download separately if >100MB)
+# data/ccs_data.db.gz
