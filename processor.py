@@ -47,6 +47,16 @@ def load_chemclass():
                 chemclass[hid.upper()] = cc
     return chemclass
 
+def load_kegg():
+    kegg = {}
+    json_path = get_data_path('hmdb_kegg.json')
+    if json_path and os.path.exists(json_path):
+        with open(json_path, encoding='utf-8') as f:
+            data = json.load(f)
+            for hid, kid in data.items():
+                kegg[hid.upper()] = kid
+    return kegg
+
 # ============================================================
 # Adduct / naming helpers
 # ============================================================
@@ -242,6 +252,7 @@ def process_single_mode(com_path, iden_path, score_cutoff, frag_cutoff, dccs_cut
     for hid, o, b, t in c.fetchall(): hmdb_src[hid.upper()] = (o or '', b or '', t or '')
     conn.close()
     chemclass = load_chemclass()
+    kegg = load_kegg()
 
     # Load COM
     t0 = time.time()
@@ -359,6 +370,7 @@ def process_single_mode(com_path, iden_path, score_cutoff, frag_cutoff, dccs_cut
             if s: orig, bio, tis = s
         row.insert(12, orig); row.insert(13, bio); row.insert(14, tis)
         row.insert(19, chemclass.get(hid.upper(), '') if hid else '')
+        row.insert(20, kegg.get(hid.upper(), '') if hid else '')
 
         if (idx + 1) % 3000 == 0:
             log(f"  {idx+1}/{len(rows)} ({matched} matched, {time.time()-t0:.0f}s)")
@@ -416,6 +428,7 @@ def process_single_mode(com_path, iden_path, score_cutoff, frag_cutoff, dccs_cut
     nh.insert(11, 'CCS_Type'); nh.insert(12, 'Origin')
     nh.insert(13, 'Biospecimen'); nh.insert(14, 'Tissue')
     nh.insert(19, 'Chemical Class')
+    nh.insert(20, 'KEGG ID')
     nh.extend(raw_headers)
 
     summary = {'total': total, 'filtered': len(filtered), 'dropped': dropped,

@@ -16,6 +16,7 @@
   <button class="tab" onclick="switchTab('tab3')">4. CCS Query</button>
   <button class="tab" onclick="switchTab('tab4')">5. Origin Query</button>
   <button class="tab" onclick="switchTab('tab5')">6. ChemClass Query</button>
+	  <button class="tab" onclick="switchTab('tab7')">7. KEGG Query</button>
 </div>
 
 <!-- ============ Tab 1: CCS Pipeline ============ -->
@@ -126,6 +127,8 @@ const QUERY_TABS = [
    placeholder:'HMDB0002639\nHMDB0010384'},
   {id:'tab5', title:'Chemical Class Query', endpoint:'/api/chemclass_query', cols:'HMDB_ID,Chemical_Class',
    placeholder:'HMDB0002639\nHMDB0010384'},
+	  {id:'tab7', title:'KEGG ID Query', endpoint:'/api/kegg_query', cols:'HMDB_ID,KEGG_ID',
+	   placeholder:'HMDB0002639\nHMDB0010384'},
 ];
 </script>
 

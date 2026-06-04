@@ -1,7 +1,7 @@
 // Tab switching
 function switchTab(id) {
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  const tabIds = ['tab1', 'tab6', 'tab2', 'tab3', 'tab4', 'tab5'];
+  const tabIds = ['tab1', 'tab6', 'tab2', 'tab3', 'tab4', 'tab5', 'tab7'];
   const idx = tabIds.indexOf(id);
   if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
   document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));

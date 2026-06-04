@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from processor import (
-    process_single_mode, load_chemclass, open_db,
+    process_single_mode, load_chemclass, load_kegg, open_db,
     simplify_name, determine_best_adduct, norm_adduct, parse_adduct_mass_diff,
     ADDUCT_MASSES, rank_compound_rows, hmdb_dedup, extract_raw_matrix
 )
@@ -474,6 +474,35 @@ def api_chemclass_query():
     results = [[hid, chemclass.get(hid.upper(), '')] for hid in ids]
 
     return jsonify({'columns': ['HMDB_ID', 'Chemical_Class'], 'rows': results})
+
+# --- Tab 6: KEGG ID Query ---
+@app.route('/api/kegg_query', methods=['POST'])
+def api_kegg_query():
+    ids = []
+    if 'file' in request.files and request.files['file'].filename:
+        f = request.files['file']
+        if f.filename.endswith('.csv'):
+            content = f.read().decode('utf-8-sig', errors='replace')
+            rows = list(csv.reader(io.StringIO(content)))
+            ids = parse_hmdb_ids(rows)
+        elif f.filename.endswith(('.xlsx', '.xls')):
+            try:
+                import openpyxl
+                wb = openpyxl.load_workbook(io.BytesIO(f.read()), read_only=True)
+                ws = wb.active
+                rows = [[str(c.value or '') for c in row] for row in ws.iter_rows()]
+                ids = parse_hmdb_ids(rows)
+            except: pass
+    else:
+        ids = parse_hmdb_ids(request.form.get('text', ''))
+
+    if not ids:
+        return jsonify({'error': 'No HMDB IDs found'}), 400
+
+    kegg = load_kegg()
+    results = [[hid, kegg.get(hid.upper(), '')] for hid in ids]
+
+    return jsonify({'columns': ['HMDB_ID', 'KEGG_ID'], 'rows': results})
 
 # --- Export CSV helper ---
 @app.route('/api/export_csv', methods=['POST'])
